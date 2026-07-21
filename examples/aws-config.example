@@ -1,0 +1,61 @@
+# Example of the ~/.aws/config that aws-config-gen produces from the
+# accompanying overrides.example.json.
+#
+# One shared [sso-session] authenticates to AWS Identity Center. Each
+# discovered (account, role) pair becomes its own [profile]:
+#   - Accounts with a SINGLE assumable role get a bare account name
+#     (e.g. `dev`, `shared`).
+#   - Accounts with MULTIPLE assumable roles get a `<account>-<role>` suffix
+#     (e.g. `prod-admin`, `prod-power`, `prod-ro`).
+#
+# Everything between the markers is regenerated on each run; anything outside
+# the markers (your own hand-written profiles) is preserved untouched.
+
+# BEGIN aws_config_gen managed block — do not edit
+[sso-session my-sso]
+sso_start_url = https://my-org.awsapps.com/start
+sso_region = us-east-1
+sso_registration_scopes = sso:account:access
+
+[profile dev]
+sso_session = my-sso
+sso_account_id = 333333333333
+sso_role_name = AdministratorAccess
+region = us-west-2
+
+[profile prod-admin]
+sso_session = my-sso
+sso_account_id = 111111111111
+sso_role_name = AdministratorAccess
+region = us-west-2
+
+[profile prod-power]
+sso_session = my-sso
+sso_account_id = 111111111111
+sso_role_name = PowerUserAccess
+region = us-west-2
+
+[profile prod-ro]
+sso_session = my-sso
+sso_account_id = 111111111111
+sso_role_name = ReadOnlyAccess
+region = us-west-2
+
+[profile shared]
+sso_session = my-sso
+sso_account_id = 444444444444
+sso_role_name = ReadOnlyAccess
+region = us-west-2
+
+[profile staging-power]
+sso_session = my-sso
+sso_account_id = 222222222222
+sso_role_name = PowerUserAccess
+region = us-west-2
+
+[profile staging-ro]
+sso_session = my-sso
+sso_account_id = 222222222222
+sso_role_name = ReadOnlyAccess
+region = us-west-2
+# END aws_config_gen managed block

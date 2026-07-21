@@ -1,0 +1,23 @@
+{
+  "sso_session": "my-sso",
+  "sso_start_url": "https://my-org.awsapps.com/start",
+  "sso_region": "us-east-1",
+  "default_region": "us-west-2",
+
+  "account_names": {
+    "111111111111": "prod",
+    "222222222222": "staging",
+    "333333333333": "dev",
+    "444444444444": "shared"
+  },
+
+  "role_short_names": {
+    "AdministratorAccess": "admin",
+    "PowerUserAccess": "power",
+    "ReadOnlyAccess": "ro"
+  },
+
+  "skip": [
+    ["444444444444", "AdministratorAccess"]
+  ]
+}
