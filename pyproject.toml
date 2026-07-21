@@ -1,6 +1,6 @@
 [project]
 name = "aws-config-gen"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Auto-generate AWS SSO profiles from Identity Center."
 readme = "README.md"
 requires-python = ">=3.14"
@@ -20,11 +20,16 @@ dev = [
 testpaths = ["tests"]
 
 [build-system]
-requires = ["setuptools>=68"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
 
-[tool.setuptools]
-package-dir = { "" = "src" }
+# Version is derived from git tags (e.g. `v0.1.0` -> `0.1.0`); no version
+# string is committed. Commits after a tag get a PEP 440 dev version.
+[tool.hatch.version]
+source = "vcs"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.hatch.build.targets.wheel]
+packages = ["src/aws_config_gen"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "examples", "README.md", "LICENSE"]

@@ -294,6 +294,31 @@ Verify your SSO session is authenticated:
 aws sso login --sso-session my-sso
 ```
 
+## Releasing
+
+Versions are derived automatically from git tags via
+[`hatch-vcs`](https://github.com/ophidian-project/hatch-vcs) — there is no
+version string to bump in `pyproject.toml`. To cut a release:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Pushing a `v*.*.*` tag triggers `.github/workflows/release.yml`, which runs the
+test suite, builds the sdist + wheel with `uv build`, and publishes a GitHub
+Release with auto-generated notes and the built artifacts attached.
+
+Continuous integration (`.github/workflows/ci.yml`) runs lint, format check, and
+the test suite on every push and pull request against Python 3.14 and 3.14t
+(free-threaded).
+
+Users install a released version with:
+
+```bash
+uv tool install git+https://github.com/stevencarpenter/aws-config-generator
+```
+
 ## Automating Updates
 
 To keep profiles current, run the generator on a schedule or after

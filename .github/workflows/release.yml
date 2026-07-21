@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+# gh release create needs write access to create the release + upload assets.
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # hatch-vcs derives the version from the full tag history.
+          fetch-depth: 0
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8.3.2
+        with:
+          enable-cache: true
+
+      - name: Install project + dev dependencies
+        run: uv sync --group dev
+
+      - name: Test (gate the release on a green tree)
+        run: uv run pytest -q
+
+      - name: Build sdist + wheel
+        run: uv build
+
+      - name: Verify built version matches the tag
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          expected="${TAG#v}"
+          echo "Tag version: $expected"
+          ls -1 dist/
+          if ! ls dist/aws_config_gen-"$expected"-*.whl >/dev/null 2>&1; then
+            echo "::error::Built wheel does not match tag version $expected" >&2
+            exit 1
+          fi
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create "$TAG" dist/* --title "$TAG" --generate-notes

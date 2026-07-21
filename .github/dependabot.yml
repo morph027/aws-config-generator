@@ -1,0 +1,17 @@
+version: 2
+updates:
+  # Keep pinned GitHub Actions (setup-uv, checkout, ...) current.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+
+  # Keep Python dev dependencies + the uv lockfile current.
+  - package-ecosystem: uv
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: deps
