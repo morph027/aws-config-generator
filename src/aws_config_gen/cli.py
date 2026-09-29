@@ -95,7 +95,9 @@ def cli(argv: Sequence[str] | None = None) -> int:
     # were omitted from the generator config by reading them from the
     # matching [sso-session <sso_session>] section in the AWS config file.
     # The file is parsed once and missing fields are collected so a single
-    # error can report all of them.
+    # error can report all of them. Field names below must exactly match
+    # GeneratorConfig attribute names, since they are passed as kwargs to
+    # dataclasses.replace() further down.
     fields_to_resolve = [
         field_name
         for field_name in ("sso_start_url", "sso_region")
