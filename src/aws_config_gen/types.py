@@ -35,4 +35,4 @@ class GeneratorConfig:
     default_region: str
     sso_session: str
     sso_start_url: str | None
-    sso_region: str
+    sso_region: str | None

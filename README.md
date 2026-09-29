@@ -133,7 +133,8 @@ SSO session spanning many accounts, with one-to-many assumable roles per account
 - `sso_session` (string): SSO session name from `~/.aws/config` or `~/.aws/sso/cache/`
 - `sso_start_url` (string, optional): AWS SSO start URL for your organization. If omitted, it is read from the
   matching `[sso-session <sso_session>]` section in `~/.aws/config` (or the file specified with `--config`).
-- `sso_region` (string): AWS region hosting Identity Center (usually `us-east-1`)
+- `sso_region` (string, optional): AWS region hosting Identity Center (usually `us-east-1`). If omitted, it is read
+  from the matching `[sso-session <sso_session>]` section in `~/.aws/config` (or the file specified with `--config`).
 - `default_region` (string): Default AWS region for generated profiles
 - `account_names` (object): Map account IDs to human-friendly names (optional)
 - `role_short_names` (object): Map role names to shorter display names (optional)

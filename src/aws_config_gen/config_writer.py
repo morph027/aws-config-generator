@@ -15,13 +15,24 @@ END_MARKER = "# END aws_config_gen managed block"
 SECTION_PATTERN = re.compile(r"^\[(?P<section>[^\]]+)\]\s*$")
 
 
-def read_sso_start_url(config_path: Path, sso_session: str) -> str | None:
-    """Read an SSO start URL from the matching AWS config session section."""
+def load_sso_session_section(config_path: Path) -> ConfigParser:
+    """Parse the AWS config file and return the parsed sections.
+
+    Callers can look up multiple fields from the resulting parser without
+    re-reading or re-parsing the file for each field.
+    """
     parser = ConfigParser(interpolation=None, strict=False)
     parser.read(config_path, encoding="utf-8")
+    return parser
+
+
+def get_sso_session_field(
+    parser: ConfigParser, sso_session: str, field: str
+) -> str | None:
+    """Read a field from the matching AWS config ``sso-session`` section."""
     section = f"sso-session {sso_session}"
-    if parser.has_option(section, "sso_start_url"):
-        return parser.get(section, "sso_start_url") or None
+    if parser.has_option(section, field):
+        return parser.get(section, field) or None
     return None
 
 
@@ -35,7 +46,8 @@ def render_profiles(
     lines.append(f"[sso-session {generator_config.sso_session}]")
     if generator_config.sso_start_url is not None:
         lines.append(f"sso_start_url = {generator_config.sso_start_url}")
-    lines.append(f"sso_region = {generator_config.sso_region}")
+    if generator_config.sso_region is not None:
+        lines.append(f"sso_region = {generator_config.sso_region}")
     lines.append("sso_registration_scopes = sso:account:access")
 
     # profile stanzas
