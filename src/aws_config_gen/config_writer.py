@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import re
 import sys
+from configparser import ConfigParser
 from pathlib import Path
 
 from aws_config_gen.types import GeneratorConfig, ProfileEntry
@@ -12,6 +13,16 @@ from aws_config_gen.types import GeneratorConfig, ProfileEntry
 BEGIN_MARKER = "# BEGIN aws_config_gen managed block — do not edit"
 END_MARKER = "# END aws_config_gen managed block"
 SECTION_PATTERN = re.compile(r"^\[(?P<section>[^\]]+)\]\s*$")
+
+
+def read_sso_start_url(config_path: Path, sso_session: str) -> str | None:
+    """Read an SSO start URL from the matching AWS config session section."""
+    parser = ConfigParser(interpolation=None, strict=False)
+    parser.read(config_path, encoding="utf-8")
+    section = f"sso-session {sso_session}"
+    if parser.has_option(section, "sso_start_url"):
+        return parser.get(section, "sso_start_url") or None
+    return None
 
 
 def render_profiles(
@@ -22,7 +33,8 @@ def render_profiles(
 
     # sso-session stanza
     lines.append(f"[sso-session {generator_config.sso_session}]")
-    lines.append(f"sso_start_url = {generator_config.sso_start_url}")
+    if generator_config.sso_start_url is not None:
+        lines.append(f"sso_start_url = {generator_config.sso_start_url}")
     lines.append(f"sso_region = {generator_config.sso_region}")
     lines.append("sso_registration_scopes = sso:account:access")
 
