@@ -12,7 +12,8 @@ from dataclasses import replace
 from pathlib import Path
 
 from aws_config_gen.config_writer import (
-    read_sso_session_field,
+    get_sso_session_field,
+    load_sso_session_section,
     render_profiles,
     write_config,
 )
@@ -93,29 +94,35 @@ def cli(argv: Sequence[str] | None = None) -> int:
     # Resolve any optional sso-session fields (sso_start_url, sso_region) that
     # were omitted from the generator config by reading them from the
     # matching [sso-session <sso_session>] section in the AWS config file.
-    # Missing fields are collected so a single error can report all of them.
+    # The file is parsed once and missing fields are collected so a single
+    # error can report all of them.
+    fields_to_resolve = [
+        field_name
+        for field_name in ("sso_start_url", "sso_region")
+        if getattr(generator_config, field_name) is None
+    ]
     resolved_values: dict[str, str] = {}
     missing_fields: list[str] = []
-    for field_name in ("sso_start_url", "sso_region"):
-        if getattr(generator_config, field_name) is not None:
-            continue
+    if fields_to_resolve:
         try:
-            field_value = read_sso_session_field(
-                config_path, generator_config.sso_session, field_name
-            )
+            aws_config_parser = load_sso_session_section(config_path)
         except configparser.Error as exc:
             print(f"Failed to read AWS config {config_path}: {exc}", file=sys.stderr)
             return 1
-        if field_value is None:
-            missing_fields.append(field_name)
-        else:
-            resolved_values[field_name] = field_value
+        for field_name in fields_to_resolve:
+            field_value = get_sso_session_field(
+                aws_config_parser, generator_config.sso_session, field_name
+            )
+            if field_value is None:
+                missing_fields.append(field_name)
+            else:
+                resolved_values[field_name] = field_value
 
     if missing_fields:
         fields = ", ".join(f"'{name}'" for name in missing_fields)
         print(
-            f"Invalid generator config file {generator_config_path}: "
-            f"{fields} missing and not found in "
+            f"Missing required field(s) {fields} in generator config file "
+            f"{generator_config_path}, and not found in "
             f"[sso-session {generator_config.sso_session}] in AWS config "
             f"{config_path}.",
             file=sys.stderr,
