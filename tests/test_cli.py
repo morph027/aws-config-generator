@@ -221,7 +221,9 @@ def test_missing_both_sso_fields_returns_clear_error(
 
     assert rc == 1
     assert not discover.called
-    assert "sso_start_url" in capsys.readouterr().err
+    stderr = capsys.readouterr().err
+    assert "sso_start_url" in stderr
+    assert "sso_region" in stderr
 
 
 def test_strict_returns_one_on_token_expired(capsys, tmp_path, sample_generator_config):

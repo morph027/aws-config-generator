@@ -93,6 +93,9 @@ def cli(argv: Sequence[str] | None = None) -> int:
     # Resolve any optional sso-session fields (sso_start_url, sso_region) that
     # were omitted from the generator config by reading them from the
     # matching [sso-session <sso_session>] section in the AWS config file.
+    # Missing fields are collected so a single error can report all of them.
+    resolved_values: dict[str, str] = {}
+    missing_fields: list[str] = []
     for field_name in ("sso_start_url", "sso_region"):
         if getattr(generator_config, field_name) is not None:
             continue
@@ -104,15 +107,23 @@ def cli(argv: Sequence[str] | None = None) -> int:
             print(f"Failed to read AWS config {config_path}: {exc}", file=sys.stderr)
             return 1
         if field_value is None:
-            print(
-                f"Invalid generator config file {generator_config_path}: "
-                f"'{field_name}' is missing and was not found in "
-                f"[sso-session {generator_config.sso_session}] in AWS config "
-                f"{config_path}.",
-                file=sys.stderr,
-            )
-            return 1
-        generator_config = replace(generator_config, **{field_name: field_value})
+            missing_fields.append(field_name)
+        else:
+            resolved_values[field_name] = field_value
+
+    if missing_fields:
+        fields = ", ".join(f"'{name}'" for name in missing_fields)
+        print(
+            f"Invalid generator config file {generator_config_path}: "
+            f"{fields} missing and not found in "
+            f"[sso-session {generator_config.sso_session}] in AWS config "
+            f"{config_path}.",
+            file=sys.stderr,
+        )
+        return 1
+
+    if resolved_values:
+        generator_config = replace(generator_config, **resolved_values)
 
     try:
         roles = discover_all_roles(
