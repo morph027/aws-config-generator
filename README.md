@@ -109,7 +109,6 @@ SSO session spanning many accounts, with one-to-many assumable roles per account
 ```json
 {
   "sso_session": "my-sso",
-  "sso_start_url": "https://mycompany.awsapps.com/start",
   "sso_region": "us-east-1",
   "default_region": "us-west-2",
   "account_names": {
@@ -132,8 +131,10 @@ SSO session spanning many accounts, with one-to-many assumable roles per account
 **Parameters:**
 
 - `sso_session` (string): SSO session name from `~/.aws/config` or `~/.aws/sso/cache/`
-- `sso_start_url` (string): AWS SSO start URL for your organization
-- `sso_region` (string): AWS region hosting Identity Center (usually `us-east-1`)
+- `sso_start_url` (string, optional): AWS SSO start URL for your organization. If omitted, it is read from the
+  matching `[sso-session <sso_session>]` section in `~/.aws/config` (or the file specified with `--config`).
+- `sso_region` (string, optional): AWS region hosting Identity Center (usually `us-east-1`). If omitted, it is read
+  from the matching `[sso-session <sso_session>]` section in `~/.aws/config` (or the file specified with `--config`).
 - `default_region` (string): Default AWS region for generated profiles
 - `account_names` (object): Map account IDs to human-friendly names (optional)
 - `role_short_names` (object): Map role names to shorter display names (optional)

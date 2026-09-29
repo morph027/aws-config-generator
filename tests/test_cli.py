@@ -47,6 +47,183 @@ def test_dry_run_prints_to_stdout(capsys, tmp_path, sample_generator_config):
     captured = capsys.readouterr()
     assert "[profile acme]" in captured.out
     assert "[sso-session test-session]" in captured.out
+    assert f"sso_start_url = {sample_generator_config.sso_start_url}" in captured.out
+
+
+def test_dry_run_reads_sso_start_url_from_aws_config(
+    capsys, tmp_path, sample_generator_config
+):
+    generator_config_path = _write_generator_config(tmp_path, sample_generator_config)
+    data = json.loads(generator_config_path.read_text())
+    data.pop("sso_start_url")
+    generator_config_path.write_text(json.dumps(data))
+    config_path = tmp_path / "aws-config"
+    config_path.write_text(
+        "[sso-session another-session]\nsso_start_url = https://other.example/start\n\n"
+        "[sso-session test-session]\nsso_start_url = https://test.example/start\n"
+    )
+    roles = [AccountRole(account=_ACCOUNT, role_name="ReadOnlyPlus")]
+
+    with patch("aws_config_gen.cli.discover_all_roles", return_value=roles):
+        rc = cli(
+            [
+                "--dry-run",
+                "--generator-config",
+                str(generator_config_path),
+                "--config",
+                str(config_path),
+            ]
+        )
+
+    assert rc == 0
+    assert "sso_start_url = https://test.example/start" in capsys.readouterr().out
+
+
+def test_missing_sso_start_url_returns_clear_error(
+    capsys, tmp_path, sample_generator_config
+):
+    generator_config_path = _write_generator_config(tmp_path, sample_generator_config)
+    data = json.loads(generator_config_path.read_text())
+    data.pop("sso_start_url")
+    generator_config_path.write_text(json.dumps(data))
+    config_path = tmp_path / "aws-config"
+    config_path.write_text(
+        "[sso-session another-session]\nsso_start_url = https://example.com\n"
+    )
+
+    with patch("aws_config_gen.cli.discover_all_roles") as discover:
+        rc = cli(
+            [
+                "--generator-config",
+                str(generator_config_path),
+                "--config",
+                str(config_path),
+            ]
+        )
+
+    assert rc == 1
+    assert not discover.called
+    assert "sso_start_url" in capsys.readouterr().err
+
+
+def test_dry_run_reads_sso_region_from_aws_config(
+    capsys, tmp_path, sample_generator_config
+):
+    generator_config_path = _write_generator_config(tmp_path, sample_generator_config)
+    data = json.loads(generator_config_path.read_text())
+    data.pop("sso_region")
+    generator_config_path.write_text(json.dumps(data))
+    config_path = tmp_path / "aws-config"
+    config_path.write_text(
+        "[sso-session another-session]\nsso_region = eu-west-1\n\n"
+        "[sso-session test-session]\nsso_region = ap-southeast-2\n"
+    )
+    roles = [AccountRole(account=_ACCOUNT, role_name="ReadOnlyPlus")]
+
+    with patch(
+        "aws_config_gen.cli.discover_all_roles", return_value=roles
+    ) as discover:
+        rc = cli(
+            [
+                "--dry-run",
+                "--generator-config",
+                str(generator_config_path),
+                "--config",
+                str(config_path),
+            ]
+        )
+
+    assert rc == 0
+    assert "sso_region = ap-southeast-2" in capsys.readouterr().out
+    assert discover.call_args.args[1] == "ap-southeast-2"
+
+
+def test_dry_run_reads_both_sso_fields_from_aws_config(
+    capsys, tmp_path, sample_generator_config
+):
+    generator_config_path = _write_generator_config(tmp_path, sample_generator_config)
+    data = json.loads(generator_config_path.read_text())
+    data.pop("sso_start_url")
+    data.pop("sso_region")
+    generator_config_path.write_text(json.dumps(data))
+    config_path = tmp_path / "aws-config"
+    config_path.write_text(
+        "[sso-session test-session]\n"
+        "sso_start_url = https://test.example/start\n"
+        "sso_region = ap-southeast-2\n"
+    )
+    roles = [AccountRole(account=_ACCOUNT, role_name="ReadOnlyPlus")]
+
+    with patch("aws_config_gen.cli.discover_all_roles", return_value=roles):
+        rc = cli(
+            [
+                "--dry-run",
+                "--generator-config",
+                str(generator_config_path),
+                "--config",
+                str(config_path),
+            ]
+        )
+
+    assert rc == 0
+    captured = capsys.readouterr().out
+    assert "sso_start_url = https://test.example/start" in captured
+    assert "sso_region = ap-southeast-2" in captured
+
+
+def test_missing_sso_region_returns_clear_error(
+    capsys, tmp_path, sample_generator_config
+):
+    generator_config_path = _write_generator_config(tmp_path, sample_generator_config)
+    data = json.loads(generator_config_path.read_text())
+    data.pop("sso_region")
+    generator_config_path.write_text(json.dumps(data))
+    config_path = tmp_path / "aws-config"
+    config_path.write_text(
+        "[sso-session another-session]\nsso_region = eu-west-1\n"
+    )
+
+    with patch("aws_config_gen.cli.discover_all_roles") as discover:
+        rc = cli(
+            [
+                "--generator-config",
+                str(generator_config_path),
+                "--config",
+                str(config_path),
+            ]
+        )
+
+    assert rc == 1
+    assert not discover.called
+    assert "sso_region" in capsys.readouterr().err
+
+
+def test_missing_both_sso_fields_returns_clear_error(
+    capsys, tmp_path, sample_generator_config
+):
+    generator_config_path = _write_generator_config(tmp_path, sample_generator_config)
+    data = json.loads(generator_config_path.read_text())
+    data.pop("sso_start_url")
+    data.pop("sso_region")
+    generator_config_path.write_text(json.dumps(data))
+    config_path = tmp_path / "aws-config"
+    config_path.write_text("[sso-session another-session]\nsso_region = eu-west-1\n")
+
+    with patch("aws_config_gen.cli.discover_all_roles") as discover:
+        rc = cli(
+            [
+                "--generator-config",
+                str(generator_config_path),
+                "--config",
+                str(config_path),
+            ]
+        )
+
+    assert rc == 1
+    assert not discover.called
+    stderr = capsys.readouterr().err
+    assert "sso_start_url" in stderr
+    assert "sso_region" in stderr
 
 
 def test_strict_returns_one_on_token_expired(capsys, tmp_path, sample_generator_config):
