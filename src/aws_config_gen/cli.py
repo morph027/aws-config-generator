@@ -3,13 +3,19 @@
 from __future__ import annotations
 
 import argparse
+import configparser
 import json
 import sys
 import urllib.error
-from pathlib import Path
 from collections.abc import Sequence
+from dataclasses import replace
+from pathlib import Path
 
-from aws_config_gen.config_writer import render_profiles, write_config
+from aws_config_gen.config_writer import (
+    read_sso_start_url,
+    render_profiles,
+    write_config,
+)
 from aws_config_gen.discovery import discover_all_roles
 from aws_config_gen.naming import build_profile_entries, load_generator_config
 from aws_config_gen.sso_token import TokenExpiredError, TokenNotFoundError
@@ -83,6 +89,25 @@ def cli(argv: Sequence[str] | None = None) -> int:
     config_path: Path = (
         args.config.expanduser() if args.config else Path.home() / ".aws" / "config"
     )
+
+    if generator_config.sso_start_url is None:
+        try:
+            sso_start_url = read_sso_start_url(
+                config_path, generator_config.sso_session
+            )
+        except configparser.Error as exc:
+            print(f"Failed to read AWS config {config_path}: {exc}", file=sys.stderr)
+            return 1
+        if sso_start_url is None:
+            print(
+                f"Invalid generator config file {generator_config_path}: "
+                f"'sso_start_url' is missing and was not found in "
+                f"[sso-session {generator_config.sso_session}] in AWS config "
+                f"{config_path}.",
+                file=sys.stderr,
+            )
+            return 1
+        generator_config = replace(generator_config, sso_start_url=sso_start_url)
 
     try:
         roles = discover_all_roles(

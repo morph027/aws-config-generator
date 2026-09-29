@@ -1,6 +1,5 @@
 {
   "sso_session": "my-sso",
-  "sso_start_url": "https://my-org.awsapps.com/start",
   "sso_region": "us-east-1",
   "default_region": "us-west-2",
 

@@ -34,5 +34,5 @@ class GeneratorConfig:
     skip: list[tuple[str, str]]
     default_region: str
     sso_session: str
-    sso_start_url: str
+    sso_start_url: str | None
     sso_region: str

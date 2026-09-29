@@ -25,7 +25,7 @@ def load_generator_config(path: Path) -> GeneratorConfig:
     data = json.loads(path.read_text())
     return GeneratorConfig(
         sso_session=data["sso_session"],
-        sso_start_url=data["sso_start_url"],
+        sso_start_url=data.get("sso_start_url"),
         sso_region=data["sso_region"],
         default_region=data["default_region"],
         account_names=data.get("account_names", {}),
