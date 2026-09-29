@@ -26,7 +26,7 @@ def load_generator_config(path: Path) -> GeneratorConfig:
     return GeneratorConfig(
         sso_session=data["sso_session"],
         sso_start_url=data.get("sso_start_url"),
-        sso_region=data["sso_region"],
+        sso_region=data.get("sso_region"),
         default_region=data["default_region"],
         account_names=data.get("account_names", {}),
         role_short_names=data.get("role_short_names", {}),

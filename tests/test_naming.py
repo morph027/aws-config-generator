@@ -164,6 +164,34 @@ def test_load_generator_config_without_sso_start_url(tmp_path):
     assert result.sso_start_url is None
 
 
+def test_load_generator_config_without_sso_region(tmp_path):
+    data = {
+        "sso_session": "test-session",
+        "sso_start_url": "https://example.com/start",
+        "default_region": "us-east-1",
+    }
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(data))
+
+    result = load_generator_config(path)
+
+    assert result.sso_region is None
+
+
+def test_load_generator_config_without_sso_start_url_or_sso_region(tmp_path):
+    data = {
+        "sso_session": "test-session",
+        "default_region": "us-east-1",
+    }
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(data))
+
+    result = load_generator_config(path)
+
+    assert result.sso_start_url is None
+    assert result.sso_region is None
+
+
 def test_load_generator_config_rejects_bad_skip_entry(tmp_path):
     data = {
         "sso_session": "s",

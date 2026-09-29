@@ -12,7 +12,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from aws_config_gen.config_writer import (
-    read_sso_start_url,
+    read_sso_session_field,
     render_profiles,
     write_config,
 )
@@ -90,24 +90,29 @@ def cli(argv: Sequence[str] | None = None) -> int:
         args.config.expanduser() if args.config else Path.home() / ".aws" / "config"
     )
 
-    if generator_config.sso_start_url is None:
+    # Resolve any optional sso-session fields (sso_start_url, sso_region) that
+    # were omitted from the generator config by reading them from the
+    # matching [sso-session <sso_session>] section in the AWS config file.
+    for field_name in ("sso_start_url", "sso_region"):
+        if getattr(generator_config, field_name) is not None:
+            continue
         try:
-            sso_start_url = read_sso_start_url(
-                config_path, generator_config.sso_session
+            field_value = read_sso_session_field(
+                config_path, generator_config.sso_session, field_name
             )
         except configparser.Error as exc:
             print(f"Failed to read AWS config {config_path}: {exc}", file=sys.stderr)
             return 1
-        if sso_start_url is None:
+        if field_value is None:
             print(
                 f"Invalid generator config file {generator_config_path}: "
-                f"'sso_start_url' is missing and was not found in "
+                f"'{field_name}' is missing and was not found in "
                 f"[sso-session {generator_config.sso_session}] in AWS config "
                 f"{config_path}.",
                 file=sys.stderr,
             )
             return 1
-        generator_config = replace(generator_config, sso_start_url=sso_start_url)
+        generator_config = replace(generator_config, **{field_name: field_value})
 
     try:
         roles = discover_all_roles(
